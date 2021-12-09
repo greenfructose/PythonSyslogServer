@@ -2,9 +2,11 @@
 import logging
 import socketserver
 import webbrowser
+import tempfile
+import os
+import time
 
 LOG_FILE = 'syslog.log'
-ALERT_FILE = 'alert.html'
 HOST, PORT = "0.0.0.0", 514
 ALERT_FILE_HEADER = '''
         <!DOCTYPE html>
@@ -54,10 +56,47 @@ ALERT_FILE_FOOTER = '''
 ALERT_CRITERIA = [
     'Possible port scan',
     'Probable port scan',
-    # 'ICMP PING'
+    'ICMP PING'
 ]
 
 logging.basicConfig(level=logging.INFO, format='%(message)s', datefmt='', filename=LOG_FILE, filemode='a')
+
+
+class AlertTemporaryFile:
+
+    def __init__(self, mode='w', delete=True):
+        self._mode = mode
+        self._delete = delete
+
+    def __enter__(self, item, data):
+        # Create randomized file name
+        file_name = f'{os.path.join(tempfile.gettempdir(), os.urandom(24).hex())}.html'
+        print(file_name)
+        # Check that file was created succsefully
+        open(file_name, "x").close()
+        self._tempFile = open(file_name, self._mode)
+        # Write alert HTML file
+        self._tempFile.write((f'{ALERT_FILE_HEADER}'
+                              f'<p class="alert">{item} has been detected.</p>'
+                              f'<p class="log">{data}<p>'
+                              f' {ALERT_FILE_FOOTER}'))
+        return self._tempFile
+
+    def __exit__(self):
+        self._tempFile.close()
+        # Open Alert HTML file
+        webbrowser.open(self._tempFile.name)
+        # Give time for file to open before deleting
+        time.sleep(1)
+        if self._delete:
+            os.remove(self._tempFile.name)
+
+    @property
+    def tempFile(self):
+        return self._tempFile
+
+
+ALERT_FILE = AlertTemporaryFile()
 
 
 class SyslogUDPHandler(socketserver.BaseRequestHandler):
@@ -68,12 +107,8 @@ class SyslogUDPHandler(socketserver.BaseRequestHandler):
         for item in ALERT_CRITERIA:
             if item in data:
                 print("%s : " % self.client_address[0], str(data))
-                with open(ALERT_FILE, 'w+') as f:
-                    f.write(f'{ALERT_FILE_HEADER}'
-                            f'<p class="alert">{item} has been detected.</p>'
-                            f'<p class="log">{data}<p>'
-                            f' {ALERT_FILE_FOOTER}')
-                webbrowser.open(ALERT_FILE)
+                ALERT_FILE.__enter__(data=data, item=item)
+                ALERT_FILE.__exit__()
                 logging.warning(str(data))
 
 
