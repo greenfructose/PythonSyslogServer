@@ -1,0 +1,9 @@
+# Virtual Environment
+venv/*
+
+# PyCharm Environment
+.idea
+
+# Files created by program
+syslog.log
+alert.html
