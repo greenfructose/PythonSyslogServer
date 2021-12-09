@@ -56,7 +56,7 @@ ALERT_FILE_FOOTER = '''
 ALERT_CRITERIA = [
     'Possible port scan',
     'Probable port scan',
-    'ICMP PING'
+    # 'ICMP PING'
 ]
 
 logging.basicConfig(level=logging.INFO, format='%(message)s', datefmt='', filename=LOG_FILE, filemode='a')
