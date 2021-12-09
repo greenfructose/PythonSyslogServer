@@ -52,11 +52,12 @@ ALERT_FILE_FOOTER = '''
     '''
 
 ALERT_CRITERIA = [
-    'port scan',
+    'Possible port scan',
+    'Probable port scan',
     # 'ICMP PING'
 ]
 
-logging.basicConfig(level=logging.WARNING, format='%(message)s', datefmt='', filename=LOG_FILE, filemode='a')
+logging.basicConfig(level=logging.INFO, format='%(message)s', datefmt='', filename=LOG_FILE, filemode='a')
 
 
 class SyslogUDPHandler(socketserver.BaseRequestHandler):
@@ -73,7 +74,7 @@ class SyslogUDPHandler(socketserver.BaseRequestHandler):
                             f'<p class="log">{data}<p>'
                             f' {ALERT_FILE_FOOTER}')
                 webbrowser.open(ALERT_FILE)
-        logging.info(str(data))
+                logging.warning(str(data))
 
 
 if __name__ == "__main__":
