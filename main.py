@@ -96,9 +96,6 @@ class AlertTemporaryFile:
         return self._tempFile
 
 
-ALERT_FILE = AlertTemporaryFile()
-
-
 class SyslogUDPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
@@ -107,6 +104,7 @@ class SyslogUDPHandler(socketserver.BaseRequestHandler):
         for item in ALERT_CRITERIA:
             if item in data:
                 print("%s : " % self.client_address[0], str(data))
+                ALERT_FILE = AlertTemporaryFile()
                 ALERT_FILE.__enter__(data=data, item=item)
                 ALERT_FILE.__exit__()
                 logging.warning(str(data))
